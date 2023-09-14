@@ -1,0 +1,35 @@
+{
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string"
+    },
+    "subtitle": {
+      "type": "string"
+    },
+    "image": {
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string"
+        },
+        "alt_text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "url",
+        "alt_text"
+      ]
+    },
+    "paragraph": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "title",
+    "subtitle",
+    "image",
+    "paragraph"
+  ]
+}
