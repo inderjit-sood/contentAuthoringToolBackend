@@ -1,55 +1,60 @@
 package com.intuit.contentAuthoringTool.Middleware;
 
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.Set;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.intuit.contentAuthoringTool.Accessor.SchemaDBService;
+import com.intuit.contentAuthoringTool.Model.Article;
 import com.networknt.schema.JsonSchema;
 import com.networknt.schema.JsonSchemaFactory;
 import com.networknt.schema.SpecVersion;
 import com.networknt.schema.ValidationMessage;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
 
 @Service
 public class JsonValidatorService {
 
-    private static String readFileAsString(String file)throws Exception
-    {
-        return new String(Files.readAllBytes(Paths.get(file)));
-    }
+    @Autowired
+    private SchemaDBService schemaDBService;
 
-    public static Boolean validateJsonObject() throws Exception {
-
+    public Boolean validateArticleAgainstSchema(Article article){
         ObjectMapper objectMapper = new ObjectMapper();
         JsonSchemaFactory schemaFactory = JsonSchemaFactory.getInstance( SpecVersion.VersionFlag.V201909 );
-
-        String jsonStream = readFileAsString( "/Users/inderjit/Documents/IntuitContentAuthoringTool/backend/contentAuthoringTool/src/main/resources/test-objects/faq-1.json" );
-        String schemaStream = readFileAsString( "/Users/inderjit/Documents/IntuitContentAuthoringTool/backend/contentAuthoringTool/src/main/resources/schemas/faq-schema.json" );
-
+        String jsonString = article.getArticleJson();
+        String schemaId = article.getSchemaId();
         try
         {
-
-            JsonNode json = objectMapper.readTree(jsonStream);
-            JsonSchema schema = schemaFactory.getSchema(schemaStream);
-
-            Set<ValidationMessage> validationResult = schema.validate( json );
+            String schemaString = schemaDBService.getSchemaBySchemaId(schemaId).getSchemaString();
+            JsonNode json = objectMapper.readTree(jsonString);
+            JsonSchema schema = schemaFactory.getSchema(schemaString);
+            Set<ValidationMessage> validationResult = schema.validate(json);
 
             if (validationResult.isEmpty()) {
-                System.out.println( "There is no validation errors" );
+                System.out.println( "There are no validation errors." );
                 return Boolean.TRUE;
             } else {
-                System.out.println( "There are validation errors" );
+                System.out.println( "There are validation errors." );
                 validationResult.forEach(vm -> System.out.println(vm.getMessage()));
                 return Boolean.FALSE;
             }
         } catch (Exception e) {
-            System.out.println(e);
-        } finally {
-
+            System.out.println("Validation of the article JSON failed: with exception:"+e.getMessage());
+            return Boolean.FALSE;
         }
+    }
 
-        return Boolean.FALSE;
+    public Boolean validateJsonSchema(String schemaString) {
+        try {
+            JsonSchemaFactory schemaFactory = JsonSchemaFactory.getInstance( SpecVersion.VersionFlag.V201909);
+            schemaFactory.getSchema(schemaString);
+        } catch (Exception e) {
+            System.out.println("JSON Schema validation for JSON String:"+schemaString+" failed due to exception: "
+                    + e.getMessage());
+            return Boolean.FALSE;
+        }
+        return Boolean.TRUE;
     }
 }

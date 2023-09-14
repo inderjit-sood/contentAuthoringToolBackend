@@ -1,6 +1,7 @@
 package com.intuit.contentAuthoringTool.Controller;
 
 import com.intuit.contentAuthoringTool.Accessor.SchemaDBService;
+import com.intuit.contentAuthoringTool.Middleware.JsonValidatorService;
 import com.intuit.contentAuthoringTool.Model.Schema;
 import com.intuit.contentAuthoringTool.Dto.SchemaDto;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +17,9 @@ public class SchemaController {
 
     @Autowired
     private SchemaDBService schemaDBService;
+
+    @Autowired
+    private JsonValidatorService jsonValidatorService;
 
     @GetMapping(value = "/get-schema/{schemaId}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> getSchema(@PathVariable String schemaId) {
@@ -52,6 +56,11 @@ public class SchemaController {
     @PostMapping(value = "/create-schema",  produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> createSchema(@RequestBody SchemaDto schemaDto) {
         try {
+            Boolean isValidSchema = jsonValidatorService.validateJsonSchema(schemaDto.getSchemaString());
+            if(isValidSchema.equals(Boolean.FALSE)) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("The schema provided is an invalid JSON schema.");
+            }
+
             Schema newSchema = Schema.builder()
                     .schemaTitle(schemaDto.getSchemaTitle())
                     .schemaString(schemaDto.getSchemaString())

@@ -2,6 +2,7 @@ package com.intuit.contentAuthoringTool.Controller;
 
 
 import com.intuit.contentAuthoringTool.Accessor.ArticleDBService;
+import com.intuit.contentAuthoringTool.Middleware.JsonValidatorService;
 import com.intuit.contentAuthoringTool.Model.Article;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -14,6 +15,9 @@ public class ArticleController {
 
     @Autowired
     private ArticleDBService articleDBService;
+
+    @Autowired
+    private JsonValidatorService jsonValidatorService;
 
     @GetMapping(value= "/get-article/{articleId}",  produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Article> getArticle(@PathVariable String articleId) {
@@ -32,9 +36,14 @@ public class ArticleController {
     @PostMapping(value = "/publish-article",  produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Article> publishArticle(@RequestBody Article article) {
         try {
+            Boolean doesArticleHasValidSchema = jsonValidatorService.validateArticleAgainstSchema(article);
+            if(doesArticleHasValidSchema.equals(Boolean.FALSE)) {
+                throw new Exception("The article is malformed and does not correspond to its schema");
+            }
             articleDBService.saveArticle(article);
             return ResponseEntity.status(HttpStatus.CREATED).body(article);
         } catch (Exception e) {
+            System.out.println("Exception occurred while saving article to server with message:"+e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
