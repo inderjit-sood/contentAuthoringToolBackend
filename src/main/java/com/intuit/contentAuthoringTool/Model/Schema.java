@@ -30,6 +30,7 @@ public class Schema {
     public String toString() {
         return "Schema{" +
                 "schemaId='" + schemaId + '\'' +
+                ", schemaTitle='" + schemaTitle + '\'' +
                 ", schemaString='" + schemaString + '\'' +
                 '}';
     }
